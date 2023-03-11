@@ -1,5 +1,5 @@
 import os
-from PyPDF2 import PdfFileReader, PdfFileWriter
+from PyPDF2 import PdfReader, PdfFileWriter
 
 def update_pdf_title_property(input_file_path, title, author, **kwargs):
     """
@@ -41,8 +41,8 @@ def update_pdf_title_property(input_file_path, title, author, **kwargs):
     file_dir, file_name = os.path.split(input_file_path)
 
     # Open the input PDF file and get its number of pages
-    input_pdf = PdfFileReader(open(input_file_path, "rb"))
-    num_pages = input_pdf.getNumPages()
+    input_pdf = PdfReader(open(input_file_path, "rb"))
+    num_pages = input_pdf.len(input_pdf.pages)
 
     # Create a new PDF writer object
     output_pdf = PdfFileWriter()
@@ -112,14 +112,14 @@ def get_pdf_properties_from_user():
     """
 
     # Prompt the user for the necessary input
-    input_file_path = input("Enter the input PDF file path: ")
-    title = input("Enter the PDF title: ")
-    author = input("Enter the PDF author: ")
+    input_file_path = input("Enter the input PDF file path: ").replace("'", "").replace('"', '')
+    title = input("Enter the PDF title: ").replace("'", "").replace('"', '')
+    author = input("Enter the PDF author: ").replace("'", "").replace('"', '')
 
     # Prompt the user for the optional inputs
-    processed_by = input("Enter the 'Processed By' custom property (optional): ")
-    county = input("Enter the 'County' custom property (optional): ")
-    court_number = input("Enter the 'Court Number' custom property (optional): ")
+    processed_by = input("Enter the 'Processed By' custom property (optional): ").replace("'", "").replace('"', '')
+    county = input("Enter the 'County' custom property (optional): ").replace("'", "").replace('"', '').upper
+    court_number = input("Enter the 'Court Number' custom property (optional): ").replace("'", "").replace('"', '')
 
     # Create a dictionary of the optional inputs
     custom_properties = {}
