@@ -1,5 +1,7 @@
 import os
-from PyPDF2 import PdfReader, PdfFileWriter
+from pypdf import PdfReader, PdfWriter
+import json
+import time
 
 def update_pdf_title_property(input_file_path, title, author, **kwargs):
     """
@@ -42,45 +44,122 @@ def update_pdf_title_property(input_file_path, title, author, **kwargs):
 
     # Open the input PDF file and get its number of pages
     input_pdf = PdfReader(open(input_file_path, "rb"))
-    num_pages = input_pdf.len(input_pdf.pages)
+    num_pages = len(input_pdf.pages)
 
     # Create a new PDF writer object
-    output_pdf = PdfFileWriter()
+    output_pdf = PdfWriter()
 
     # Set the title and author properties of the output PDF
-    output_pdf.addMetadata({
-        '/Title': title,
-        '/Author': author
-    })
+    output_pdf.add_metadata({"/Title": title, "/Author": author})
 
     # Set the custom properties of the output PDF if provided
-    if 'Processed By' in kwargs:
-        output_pdf.addMetadata({
-            '/Processed By': kwargs['Processed By']
-        })
-    if 'County' in kwargs:
-        output_pdf.addMetadata({
-            '/County': kwargs['County']
-        })
-    if 'Court Number' in kwargs:
-        output_pdf.addMetadata({
-            '/Court Number': kwargs['Court Number']
-        })
+    if "Processed By" in kwargs:
+        output_pdf.add_metadata({"/Processed By": kwargs["Processed By"]})
+    if "County" in kwargs:
+        output_pdf.add_metadata({"/County": kwargs["County"]})
+    if "Court Number" in kwargs:
+        output_pdf.add_metadata({"/Court Number": kwargs["Court Number"]})
 
     # Add each page of the input PDF to the output PDF
     for page_num in range(num_pages):
-        page = input_pdf.getPage(page_num)
-        output_pdf.addPage(page)
+        page = input_pdf.pages[page_num]
+        output_pdf.add_page(page)
 
     # Create the output file path by combining the directory path and original file name
     output_file_path = os.path.join(file_dir, file_name)
 
     # Write the output PDF to the output file path
-    with open(output_file_path, "wb") as output_file:
-        output_pdf.write(output_file)
+    try:
+        with open(output_file_path, "wb") as output_file:
+            output_pdf.write(output_file)
+    except PermissionError:
+        print(f"The file {output_file_path} is currently in use. Please close it and try again.")
+        while True:
+            try:
+                with open(output_file_path, "wb") as output_file:
+                    output_pdf.write(output_file)
+                break
+            except PermissionError:
+                time.sleep(5) # wait for 5 seconds
 
     # Return the output file path
     return output_file_path
+
+def save_pdf_properties_to_log_file(file_dir, file_name, data, title):
+    """
+    Saves the PDF properties to a log file in JSON format.
+
+    Name:
+    save_pdf_properties_to_log_file
+
+    Description:
+    This function takes a directory path, a file name, and data to save to the log file.
+    It saves the data to a JSON file in the specified directory path.
+
+    Parameters:
+    file_dir (str): The directory path where the log file will be saved.
+    file_name (str): The name of the log file.
+    data (dict): The data to save to the log file.
+    title (str): The title of the PDF file.
+
+    Returns:
+    None.
+
+    Preconditions:
+    - The file_dir must be a valid directory path.
+    - The file_name must be a non-empty string.
+    - The data must be a dictionary with non-empty string keys and values.
+    - The title must be a non-empty string.
+
+    Notes:
+    - If the log file already exists, the data will be appended to the existing file.
+    - The file extension of the log file should be ".json".
+    """
+    # Remove double slashes in the input PDF file path
+    data["Input PDF File Path"] = data["Input PDF File Path"].replace(
+        "\\\\", "\\"
+    )
+
+    # Create the full file path
+    file_path = os.path.join(file_dir, file_name)
+
+    try:
+        # Create the log file if it does not exist
+        if not os.path.exists(file_path):
+            with open(file_path, "w") as file:
+                json.dump({title: [data]}, file, indent=4)
+
+        # If the file exists but is empty, write the new data to the file
+        elif os.stat(file_path).st_size == 0:
+            with open(file_path, "w") as file:
+                json.dump({title: [data]}, file, indent=4)
+
+        # If the file exists and has data, append the new data to the file
+        else:
+            # Load the log file data into a dictionary
+            with open(file_path, "r") as file:
+                log_data = json.load(file)
+
+            # Append the new data to the log file dictionary
+            if title in log_data:
+                log_data[title].append(data)
+            else:
+                log_data[title] = [data]
+
+            # Write the updated log file dictionary to the log file
+            with open(file_path, "w") as file:
+                json.dump(log_data, file, indent=4)
+
+    except PermissionError:
+        print(f"The file {file_name} is currently in use. Please close it and try again.")
+        while True:
+            try:
+                with open(file_path, "w") as file:
+                    json.dump(log_data, file, indent=4)
+                break
+            except PermissionError:
+                time.sleep(5)  # wait for 5 seconds
+
 
 def get_pdf_properties_from_user():
     """
@@ -97,7 +176,7 @@ def get_pdf_properties_from_user():
     None.
 
     Returns:
-    tuple: A tuple containing the input file path (str), title (str), author (str),
+    dict: A dictionary containing the input file path (str), title (str), author (str),
     and custom properties (dict). The custom properties dictionary contains optional
     properties specified by the user. The keys are the property names and the values
     are the property values.
@@ -112,56 +191,97 @@ def get_pdf_properties_from_user():
     """
 
     # Prompt the user for the necessary input
-    input_file_path = input("Enter the input PDF file path: ").replace("'", "").replace('"', '')
-    title = input("Enter the PDF title: ").replace("'", "").replace('"', '')
-    author = input("Enter the PDF author: ").replace("'", "").replace('"', '')
+    input_file_path = (
+        input("Enter the input PDF file path: ")
+        .replace("'", "")
+        .replace('"', "")
+    )
+    title = input("Enter the PDF title: ").replace("'", "").replace('"', "")
+    author = input("Enter the PDF author: ").replace("'", "").replace('"', "")
 
     # Prompt the user for the optional inputs
-    processed_by = input("Enter the 'Processed By' custom property (optional): ").replace("'", "").replace('"', '')
-    county = input("Enter the 'County' custom property (optional): ").replace("'", "").replace('"', '').upper
-    court_number = input("Enter the 'Court Number' custom property (optional): ").replace("'", "").replace('"', '')
+    processed_by = (
+        input("Enter the 'Processed By' custom property (optional): ")
+        .replace("'", "")
+        .replace('"', "")
+    )
+    county = (
+        input("Enter the 'County' custom property (optional): ")
+        .replace("'", "")
+        .replace('"', "")
+        .upper()
+    )
+    court_number = (
+        input("Enter the 'Court Number' custom property (optional): ")
+        .replace("'", "")
+        .replace('"', "")
+    )
 
     # Create a dictionary of the optional inputs
     custom_properties = {}
     if processed_by:
-        custom_properties['Processed By'] = processed_by
+        custom_properties["Processed By"] = processed_by
     if county:
-        custom_properties['County'] = county
+        custom_properties["County"] = county
     if court_number:
-        custom_properties['Court Number'] = court_number
+        custom_properties["Court Number"] = court_number
 
-    # Return a tuple of the necessary and optional inputs
-    return (input_file_path, title, author, custom_properties)
+    # Create a dictionary of all the inputs
+    input_dict = {
+        "Input PDF File Path": input_file_path,
+        "Title": title,
+        "Author": author,
+        "Custom Properties": custom_properties,
+    }
+
+    # Return the dictionary of inputs
+    return input_dict
+
 
 def main():
     """
-    Updates the title property of a PDF file and adds custom properties based on user input.
+    Update PDF title and custom properties, and save properties to log file.
 
     Description:
-    This function prompts the user to enter the input file path, title, author,
-    and optional custom properties for the PDF file. It then calls the
-    update_pdf_title_property function to update the title property and custom
-    properties of the PDF file, and prints the file path of the updated PDF.
+    This function takes user input for the input PDF file path, the new PDF title, the author, and
+    optional custom properties to add to the PDF file. It then updates the title and properties of
+    the PDF file and saves a new file with the updated properties. The function also logs the
+    properties of the PDF file to a JSON file.
 
     Preconditions:
-    - The user must enter valid input when prompted for the input file path, title,
-      author, and custom properties.
-    - The input file path must be a valid file path of an existing PDF file.
+    - The input PDF file path must exist and be a valid file path.
+    - The PDF title and author must be non-empty strings.
+    - The keys and values in the custom properties dictionary must be strings.
 
     Notes:
-    - If the input file path and output file path are the same, the original file
-      will be overwritten with the updated file.
+    - The function will append the properties of the PDF file to the existing log file if the file
+      already exists.
+    - The log file name is "_LogThese.json".
     """
-    # Get the PDF properties from the user
-    input_file_path, title, author, custom_properties = get_pdf_properties_from_user()
+    # Get the necessary input from the user
+    user_input = get_pdf_properties_from_user()
+    input_file_path = user_input["Input PDF File Path"]
+    title = user_input["Title"]
+    author = user_input["Author"]
+    custom_properties = user_input["Custom Properties"]
 
-    # Update the PDF title property and custom properties
-    output_file_path = update_pdf_title_property(input_file_path, title, author, **custom_properties)
+    # Update the title and properties of the PDF file
+    output_file_path = update_pdf_title_property(
+        input_file_path, title, author, **custom_properties
+    )
 
-    # Print the output file path
-    print("Output file path:", output_file_path)
+    # Log the PDF properties to a JSON file
+    log_file_dir = os.path.dirname(output_file_path)
+    log_file_name = "_LogThese.json"
+    save_pdf_properties_to_log_file(
+        log_file_dir, log_file_name, user_input, title
+    )
 
-if __name__ == '__main__':
+    # Print confirmation message
+    print(f"PDF file properties updated and logged to {log_file_name}.")
+
+
+if __name__ == "__main__":
     main()
 
 """
