@@ -3,6 +3,9 @@ from pypdf import PdfReader, PdfWriter
 import json
 import time
 
+class abort_exception(Exception):
+    pass
+
 def update_pdf_title_property(input_file_path, title, author, **kwargs):
     """
     Updates the title property of a PDF file and adds custom properties.
@@ -160,7 +163,6 @@ def save_pdf_properties_to_log_file(file_dir, file_name, data, title):
             except PermissionError:
                 time.sleep(5)  # wait for 5 seconds
 
-
 def get_pdf_properties_from_user():
     """
     Prompts the user for necessary and optional inputs to update a PDF file.
@@ -190,32 +192,107 @@ def get_pdf_properties_from_user():
       leaving the fields empty.
     """
 
-    # Prompt the user for the necessary input
-    input_file_path = (
-        input("Enter the input PDF file path: ")
-        .replace("'", "")
-        .replace('"', "")
-    )
-    title = input("Enter the PDF title: ").replace("'", "").replace('"', "")
-    author = input("Enter the PDF author: ").replace("'", "").replace('"', "")
+    quit_instructions = "(Type \"quit\" to exit the program)"
+    mandatory_msg = "Mandatory field: Please enter a value to continue."
+    abort_msg = "Aborting process..."
+    while True:
+        # Prompt the user for the necessary input
+        print(f"Enter the input PDF file path.{quit_instructions}")
+        user_input = input("> ").strip()
+        if user_input != "":
+            if user_input.isdigit():
+                print("You can only enter text as the path to a file.")
+            elif user_input.lower == "quit":
+                print(f"{abort_msg}")
+                raise abort_exception(f"{abort_msg}")
+        elif user_input == "":
+            print(f"{mandatory_msg}")
+        input_file_path = (
+            user_input
+            .replace("'", "")
+            .replace('"', "")
+        )
+        print(f"Enter the PDF title: {quit_instructions}")
+        user_input = input("> ").strip()
+        if user_input != "":
+            if user_input.isdigit():
+                print("You can only enter text.")
+            elif user_input.lower == "quit":
+                print(f"{abort_msg}")
+                raise abort_exception(f"{abort_msg}")
+        elif user_input == "":
+            print(f"{mandatory_msg}")
+        title = (
+            user_input
+            .replace("'", "")
+            .replace('"', "")
+        )
+        print(f"Enter the PDF author/evaluator: {quit_instructions}")
+        user_input = input("> ").strip()
+        if user_input != "":
+            if user_input.isdigit():
+                print("You can only enter text.")
+            elif user_input.lower == "quit":
+                print(f"{abort_msg}")
+                raise abort_exception(f"{abort_msg}")
+        elif user_input == "":
+            print(f"{mandatory_msg}")
+        author = (
+            user_input
+            .replace("'", "")
+            .replace('"', "")
+        )
 
-    # Prompt the user for the optional inputs
-    processed_by = (
-        input("Enter the 'Processed By' custom property (optional): ")
-        .replace("'", "")
-        .replace('"', "")
-    )
-    county = (
-        input("Enter the 'County' custom property (optional): ")
-        .replace("'", "")
-        .replace('"', "")
-        .upper()
-    )
-    court_number = (
-        input("Enter the 'Court Number' custom property (optional): ")
-        .replace("'", "")
-        .replace('"', "")
-    )
+        # Prompt the user for the optional inputs
+        print(f"Enter the 'Processed By' custom property (optional): {quit_instructions}")
+        user_input = input("> ").strip()
+        if user_input != "":
+            if user_input.isdigit():
+                print("You can only enter text.")
+            elif user_input.lower == "quit":
+                print(f"{abort_msg}")
+                raise abort_exception(f"{abort_msg}")
+        elif user_input == "":
+            print(f"{mandatory_msg}")
+        processed_by = (
+            user_input
+            .replace("'", "")
+            .replace('"', "")
+        )
+        print(f"Enter the 'County' custom property (optional): {quit_instructions}")
+        user_input = input("> ").strip()
+        if user_input != "":
+            if user_input.isdigit():
+                print("You can only enter text.")
+            elif user_input.lower == "quit":
+                print(f"{abort_msg}")
+                raise abort_exception(f"{abort_msg}")
+        elif user_input == "":
+            print(f"{mandatory_msg}")
+        county = (
+            user_input
+            .replace("'", "")
+            .replace('"', "")
+            .upper()
+        )
+        print(f"Enter the 'Court Number' custom property (optional): {quit_instructions}")
+        user_input = input("> ").strip()
+        if user_input != "":
+            if user_input.isdigit():
+                print("You can only enter text.")
+            elif user_input.lower == "quit":
+                print(f"{abort_msg}")
+                raise abort_exception(f"{abort_msg}")
+        elif user_input == "":
+            print(f"{mandatory_msg}")
+        court_number = (
+            user_input
+            .replace("'", "")
+            .replace('"', "")
+        )
+        # Check if all required inputs have been provided
+        if all(len(value) > 0 for value in [input_file_path, title, author, processed_by, county, court_number]):
+            break
 
     # Create a dictionary of the optional inputs
     custom_properties = {}
