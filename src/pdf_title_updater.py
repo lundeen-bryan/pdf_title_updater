@@ -1,10 +1,9 @@
+import sys
 import os
 from pypdf import PdfReader, PdfWriter
 import json
 import time
-
-class abort_exception(Exception):
-    pass
+import art
 
 def update_pdf_title_property(input_file_path, title, author, **kwargs):
     """
@@ -195,6 +194,20 @@ def get_pdf_properties_from_user():
     quit_instructions = "(Type \"quit\" to exit the program)"
     mandatory_msg = "Mandatory field: Please enter a value to continue."
     abort_msg = "Aborting process..."
+    print(art.logo)
+    opening_msg = '''
+    Welcome to the PDF Title Updater for EZ Logger!
+    ---
+
+    This app will let you change the properties in a PDF file such as the
+    title, author, etc., that help identify meta data about the report
+    in the PDF document.
+
+    Answer the questions below, and if you want to quit at any time,
+    enter the word "quit" and press the ENTER key to exit the app.
+
+    '''
+    print()
     while True:
         # Prompt the user for the necessary input
         print(f"Enter the input PDF file path.{quit_instructions}")
@@ -202,9 +215,9 @@ def get_pdf_properties_from_user():
         if user_input != "":
             if user_input.isdigit():
                 print("You can only enter text as the path to a file.")
-            elif user_input.lower == "quit":
+            elif user_input.lower() == "quit":
                 print(f"{abort_msg}")
-                raise abort_exception(f"{abort_msg}")
+                sys.exit(0) # exit program w/o displaying error.
         elif user_input == "":
             print(f"{mandatory_msg}")
         input_file_path = (
@@ -217,9 +230,9 @@ def get_pdf_properties_from_user():
         if user_input != "":
             if user_input.isdigit():
                 print("You can only enter text.")
-            elif user_input.lower == "quit":
+            elif user_input.lower() == "quit":
                 print(f"{abort_msg}")
-                raise abort_exception(f"{abort_msg}")
+                sys.exit(0) # exit program w/o displaying error.
         elif user_input == "":
             print(f"{mandatory_msg}")
         title = (
@@ -232,9 +245,9 @@ def get_pdf_properties_from_user():
         if user_input != "":
             if user_input.isdigit():
                 print("You can only enter text.")
-            elif user_input.lower == "quit":
+            elif user_input.lower() == "quit":
                 print(f"{abort_msg}")
-                raise abort_exception(f"{abort_msg}")
+                sys.exit(0) # exit program w/o displaying error.
         elif user_input == "":
             print(f"{mandatory_msg}")
         author = (
@@ -249,11 +262,9 @@ def get_pdf_properties_from_user():
         if user_input != "":
             if user_input.isdigit():
                 print("You can only enter text.")
-            elif user_input.lower == "quit":
+            elif user_input.lower() == "quit":
                 print(f"{abort_msg}")
-                raise abort_exception(f"{abort_msg}")
-        elif user_input == "":
-            print(f"{mandatory_msg}")
+                sys.exit(0) # exit program w/o displaying error.
         processed_by = (
             user_input
             .replace("'", "")
@@ -264,11 +275,9 @@ def get_pdf_properties_from_user():
         if user_input != "":
             if user_input.isdigit():
                 print("You can only enter text.")
-            elif user_input.lower == "quit":
+            elif user_input.lower() == "quit":
                 print(f"{abort_msg}")
-                raise abort_exception(f"{abort_msg}")
-        elif user_input == "":
-            print(f"{mandatory_msg}")
+                sys.exit(0) # exit program w/o displaying error.
         county = (
             user_input
             .replace("'", "")
@@ -280,18 +289,16 @@ def get_pdf_properties_from_user():
         if user_input != "":
             if user_input.isdigit():
                 print("You can only enter text.")
-            elif user_input.lower == "quit":
+            elif user_input.lower() == "quit":
                 print(f"{abort_msg}")
-                raise abort_exception(f"{abort_msg}")
-        elif user_input == "":
-            print(f"{mandatory_msg}")
+                sys.exit(0) # exit program w/o displaying error.
         court_number = (
             user_input
             .replace("'", "")
             .replace('"', "")
         )
         # Check if all required inputs have been provided
-        if all(len(value) > 0 for value in [input_file_path, title, author, processed_by, county, court_number]):
+        if all(len(value) > 0 for value in [input_file_path, title, author]):
             break
 
     # Create a dictionary of the optional inputs
