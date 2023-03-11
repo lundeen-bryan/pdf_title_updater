@@ -1,5 +1,3 @@
-# README
-
 # PDF Title Updater
 
 This is a Python script that updates the title property of a PDF file and adds custom properties based on user input.
@@ -115,7 +113,7 @@ Please make sure your code follows the existing code style and passes the automa
 
 ## Issues
 
-If you encounter any issues while using this script, please report them on the [GitHub issue tracker](https://github.com/your_username/pdf-title-updater/issues).
+If you encounter any issues while using this script, please report them on the [GitHub issue tracker](https://github.com/lundeen-bryan/pdf_title_updater/issues).
 
 ## Contact
 
